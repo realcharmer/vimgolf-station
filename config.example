@@ -1,0 +1,8 @@
+USER_KEY=""
+
+declare -A CHALLENGES=(
+	["1"]="9v0061478032000000000212|hello-world-vimgolf"
+	["2"]="9v006289c03700000000021f|Many duplicates"
+	["3"]="9v006283b31d00000000021d|Delete swap"
+	["4"]="9v006621a9a900000000026b|New teacher"
+)
