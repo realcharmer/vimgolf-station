@@ -1,4 +1,6 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -euo pipefail
+
 VIMGOLF_IMAGE="ghcr.io/igrigorik/vimgolf:latest"
 
 # Prevent interrupt with SIGINT (^C)
@@ -39,13 +41,22 @@ while true; do
 	done
 	echo
 	read -rp " Select challenge: " choice
-	if [[ -z "${CHALLENGES[$choice]}" ]]; then
-		echo "Invalid choice!"
-		sleep 2
-		exit 1
+	# Handle empty input
+	if [[ -z "$choice" ]]; then
+		echo
+		echo -e " \e[31mNo challenge entered!\e[0m"
+		sleep 1
+		continue
 	fi
-	CHALLENGE_ID="${CHALLENGES[$choice]%|*}"
+	# Handle invalid input
+	if [[ -z "${CHALLENGES[$choice]:-}" ]]; then
+		echo
+		echo -e " \e[31mInvalid challenge!\e[0m"
+		sleep 1
+		continue
+	fi
+	IFS='|' read -r CHALLENGE_ID _ <<< "${CHALLENGES[$choice]}"
 	echo
-	echo -e "Loading \e[32m[$CHALLENGE_ID]\e[0m"
+	echo -e " Loading \e[32m[$CHALLENGE_ID]\e[0m"
 	docker run --rm -it -e "key=$USER_KEY" "$VIMGOLF_IMAGE" "$CHALLENGE_ID"
 done
