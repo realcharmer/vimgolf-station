@@ -1,0 +1,112 @@
+- name: General
+  hosts: all
+  tags: general
+  tasks:
+    - name: Install core services
+      community.general.xbps:
+        name:
+          - avahi
+          - chrony
+          - rng-tools
+        state: present
+
+    - name: Enable core services
+      community.general.runit:
+        name: '{{ item }}'
+        enabled: true
+        state: started
+      loop:
+        - agetty-tty1
+        - avahi-daemon
+        - chronyd
+        - rngd
+
+    - name: Disable redundant services
+      community.general.runit:
+        name: '{{ item }}'
+        enabled: false
+        state: stopped
+      loop:
+        - agetty-tty2
+        - agetty-tty3
+        - agetty-tty4
+        - agetty-tty5
+        - agetty-tty6
+
+
+- name: Software update
+  hosts: all
+  tags: software
+  tasks:
+    - name: Upgrade all packages
+      community.general.xbps:
+        upgrade: true
+
+    - name: Clear xbps cache
+      command: 'xbps-remove -O'
+
+    - name: Purge old kernels
+      command: 'vkpurge rm all'
+
+
+- name: Root user configuration
+  hosts: all
+  tags: users
+  tasks:
+    - name: Set bash as default shell for root
+      user:
+        name: root
+        shell: /bin/bash
+
+
+- name: VimGolf
+  hosts: all
+  tags: vimgolf
+  tasks:
+    - name: Install services
+      community.general.xbps:
+        name:
+          - docker
+          - greetd
+        state: present
+
+    - name: Create vimgolf user
+      user:
+        name: 'vimgolf'
+        state: present
+        shell: '/sbin/nologin'
+
+    - name: Add user to the docker group
+      user:
+        name: 'vimgolf'
+        groups: docker
+        append: yes
+
+    - name: Copy greetd configuration
+      ansible.builtin.copy:
+        src: etc/greetd/config.toml
+        dest: /etc/greetd/config.toml
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Copy VimGolf Scripts
+      ansible.builtin.copy:
+        src: vimgolf/
+        owner: root
+        group: root
+        dest: /home/vimgolf/
+
+    - name: Enable VimGolf script execution
+      ansible.builtin.file:
+        path: /home/vimgolf/vimgolf.sh
+        mode: '0755'
+
+    - name: Enable services
+      community.general.runit:
+        name: '{{ item }}'
+        enabled: true
+        state: started
+      loop:
+        - docker
+        - greetd
