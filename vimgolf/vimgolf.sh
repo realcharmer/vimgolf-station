@@ -3,6 +3,7 @@ set -euo pipefail
 trap '' INT
 
 VIMGOLF_IMAGE="ghcr.io/igrigorik/vimgolf:latest"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 network_configuration() {
 	echo -n "+ Connecting to Wi-Fi "
@@ -21,7 +22,7 @@ network_configuration() {
 
 vimgolf() {
 	clear
-	cat banner
+	cat "$SCRIPT_DIR/banner"
 	for key in "${!CHALLENGES[@]}"; do
 		local val="${CHALLENGES[$key]}"
 		local desc="${val#*|}"
@@ -50,11 +51,12 @@ vimgolf() {
 	docker run --rm -it -e "key=$USER_KEY" "$VIMGOLF_IMAGE" "$CHALLENGE_ID"
 }
 
-if [[ ! -f "config" ]]; then
+if [[ ! -f "$SCRIPT_DIR/config" ]]; then
 	echo "Configuration file missing!"
 	exit 1
 fi
-source "config"
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR/config"
 network_configuration
 docker pull "$VIMGOLF_IMAGE"
 while true; do
